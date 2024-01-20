@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 
 	"github.com/gofiber/fiber/v2"
@@ -48,5 +49,12 @@ func main() {
 		return c.SendString("Data received successfully")
 	})
 
+	app.Get("/read", func(c *fiber.Ctx) error {
+		content, err := ioutil.ReadFile("cur.txt")
+		if err != nil {
+			fmt.Println("Error reading file:", err)
+		}
+		return c.JSON(fiber.Map{"massage": content})
+	})
 	app.Listen(getPort())
 }
