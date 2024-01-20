@@ -44,6 +44,9 @@ func readFromFile() ([]Scanner, error) {
 	lines := strings.Split(data, "\n")
 	var scanners []Scanner
 	for _, line := range lines {
+		if line == "" {
+			continue
+		}
 		var scanner Scanner
 		_, err := fmt.Sscanf(line, "%f %f %f", &scanner.Dist, &scanner.X, &scanner.Y)
 		if err != nil {
