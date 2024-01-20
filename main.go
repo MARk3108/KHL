@@ -54,7 +54,7 @@ func main() {
 		if err != nil {
 			fmt.Println("Error reading file:", err)
 		}
-		return c.JSON(fiber.Map{"massage": content})
+		return c.JSON(fiber.Map{"massage": string(content)})
 	})
 	app.Listen(getPort())
 }
