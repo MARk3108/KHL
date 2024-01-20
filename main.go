@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -11,6 +12,12 @@ import (
 )
 
 var mu sync.Mutex
+
+type Scanner struct {
+	Dist float64
+	X    float64
+	Y    float64
+}
 
 func getPort() string {
 	port := os.Getenv("PORT")
@@ -23,17 +30,30 @@ func getPort() string {
 	return port
 }
 
-func readFromFile() (string, error) {
+func readFromFile() ([]Scanner, error) {
 	mu.Lock()
 	defer mu.Unlock()
 
 	content, err := ioutil.ReadFile("cur.txt")
 	if err != nil {
 		fmt.Println("Error reading file:", err)
-		return "", err
+		return nil, err
 	}
 
-	return string(content), nil
+	data := string(content)
+	lines := strings.Split(data, "\n")
+	var scanners []Scanner
+	for _, line := range lines {
+		var scanner Scanner
+		_, err := fmt.Sscanf(line, "%f %f %f", &scanner.Dist, &scanner.X, &scanner.Y)
+		if err != nil {
+			fmt.Println("Error parsing line:", err)
+			return nil, err
+		}
+
+		scanners = append(scanners, scanner)
+	}
+	return scanners, nil
 }
 
 func writeToFile(body string) error {
