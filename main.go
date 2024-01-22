@@ -65,7 +65,7 @@ func readFromFile() ([]Scanner, error) {
 	}
 
 	sort.Slice(scanners, func(i, j int) bool {
-		return scanners[i].Dist < scanners[j].Dist
+		return scanners[i].Dist > scanners[j].Dist
 	})
 
 	return scanners, nil
