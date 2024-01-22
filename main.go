@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -43,6 +44,7 @@ func readFromFile() ([]Scanner, error) {
 	data := string(content)
 	lines := strings.Split(data, "\n")
 	var scanners []Scanner
+	scannerMap := make(map[string]Scanner)
 	for _, line := range lines {
 		if line == "" {
 			continue
@@ -54,8 +56,18 @@ func readFromFile() ([]Scanner, error) {
 			return nil, err
 		}
 
+		key := fmt.Sprintf("%f,%f", scanner.X, scanner.Y)
+		scannerMap[key] = scanner
+	}
+
+	for _, scanner := range scannerMap {
 		scanners = append(scanners, scanner)
 	}
+
+	sort.Slice(scanners, func(i, j int) bool {
+		return scanners[i].Dist < scanners[j].Dist
+	})
+
 	return scanners, nil
 }
 
