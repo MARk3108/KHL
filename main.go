@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"math"
 	"os"
 	"sort"
 	"strings"
@@ -67,6 +68,32 @@ func readFromFile() ([]Scanner, error) {
 	sort.Slice(scanners, func(i, j int) bool {
 		return scanners[i].Dist > scanners[j].Dist
 	})
+
+	var calculation []Scanner
+	var scanStamp Scanner
+
+	if len(scanners) >= 3 {
+		for i := 0; i < 3; i++ {
+			dist := scanners[i].Dist
+			dist = math.Pow(10, ((-84 - dist) / (10 * 2)))
+			scanStamp.Dist = dist
+			scanStamp.X = scanners[i].X
+			scanStamp.Y = scanners[i].Y
+			calculation = append(calculation, scanStamp)
+		}
+		x_podstav := (math.Pow(2, calculation[1].Dist) - math.Pow(2, calculation[1].X) -
+			math.Pow(2, calculation[0].Dist) + math.Pow(2, calculation[0].X) + math.Pow(2, calculation[0].Y) -
+			math.Pow(2, calculation[1].Y)) / (2 * (calculation[1].X - calculation[0].X))
+		koef := (calculation[0].Y - calculation[1].Y) / (calculation[1].X - calculation[0].X)
+		y := (math.Pow(2, calculation[2].Dist) - math.Pow(2, calculation[2].X) +
+			(2 * calculation[2].X * x_podstav) - math.Pow(2, calculation[1].Dist) +
+			math.Pow(2, calculation[1].X) - (2 * calculation[1].X * x_podstav) +
+			math.Pow(2, calculation[1].Y) - math.Pow(2, calculation[2].Y)) /
+			(2*calculation[1].X*koef + 2*calculation[1].Y -
+				2*calculation[2].X*koef - 2*calculation[2].Y)
+		x := x_podstav + koef*y
+		fmt.Println("Coordinates: ", x, ";", y)
+	}
 
 	return scanners, nil
 }
