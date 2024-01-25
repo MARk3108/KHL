@@ -125,7 +125,7 @@ func writeToFile(body string) error {
 
 	// Write data to the file
 	if _, err := file.WriteString(body + "\n"); err != nil {
-		fmt.Println("Error writing to file:", err)
+		fmt.Println("Error writing to file ", err)
 		return err
 	}
 
