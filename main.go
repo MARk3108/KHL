@@ -81,18 +81,32 @@ func readFromFile() ([]Scanner, error) {
 			scanStamp.Y = scanners[i].Y
 			calculation = append(calculation, scanStamp)
 		}
-		x_podstav := (math.Pow(2, calculation[1].Dist) - math.Pow(2, calculation[1].X) -
-			math.Pow(2, calculation[0].Dist) + math.Pow(2, calculation[0].X) + math.Pow(2, calculation[0].Y) -
-			math.Pow(2, calculation[1].Y)) / (2 * (calculation[1].X - calculation[0].X))
-		koef := (calculation[0].Y - calculation[1].Y) / (calculation[1].X - calculation[0].X)
-		y := (math.Pow(2, calculation[2].Dist) - math.Pow(2, calculation[2].X) +
-			(2 * calculation[2].X * x_podstav) - math.Pow(2, calculation[1].Dist) +
-			math.Pow(2, calculation[1].X) - (2 * calculation[1].X * x_podstav) +
-			math.Pow(2, calculation[1].Y) - math.Pow(2, calculation[2].Y)) /
-			(2*calculation[1].X*koef + 2*calculation[1].Y -
+		x_podstav := (math.Pow(calculation[1].Dist, 2) - math.Pow(calculation[1].X, 2) -
+			math.Pow(calculation[0].Dist, 2) + math.Pow(calculation[0].X, 2) + math.Pow(calculation[0].Y, 2) -
+			math.Pow(calculation[1].Y, 2)) / (2 * (calculation[0].X - calculation[1].X))
+		koef := (calculation[1].Y - calculation[0].Y) / (calculation[0].X - calculation[1].X)
+
+		y := (math.Pow(calculation[2].Dist, 2) - math.Pow(calculation[2].X, 2) +
+			(2 * calculation[2].X * x_podstav) - math.Pow(calculation[0].Dist, 2) +
+			math.Pow(calculation[0].X, 2) - (2 * calculation[0].X * x_podstav) +
+			math.Pow(calculation[0].Y, 2) - math.Pow(calculation[2].Y, 2)) /
+			(2*calculation[0].X*koef + 2*calculation[0].Y -
 				2*calculation[2].X*koef - 2*calculation[2].Y)
 		x := x_podstav + koef*y
 		fmt.Println("Coordinates: ", x, ";", y)
+
+		file, err := os.OpenFile("cur.txt", os.O_WRONLY|os.O_TRUNC, 0666)
+		if err != nil {
+			fmt.Println("Error opening file:", err)
+		}
+		defer file.Close()
+
+		// Обрезать файл до нулевой длины (удалить все данные)
+		err = file.Truncate(0)
+		if err != nil {
+			fmt.Println("Error truncating file:", err)
+		}
+		fmt.Println("File content has been erased.")
 	}
 
 	return scanners, nil
