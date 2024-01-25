@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"math"
@@ -112,9 +113,23 @@ func readFromFile() ([]Scanner, error) {
 	return scanners, nil
 }
 
-func writeToFile(body string) error {
+func writeToFile(body []byte) error {
 	mu.Lock()
 	defer mu.Unlock()
+	var data map[string]interface{}
+	err := json.Unmarshal(body, &data)
+	if err != nil {
+		fmt.Println("Error parsing JSON data: ", err)
+	}
+	value1, ok1 := data["key1"].(float64)
+	value2, ok2 := data["key2"].(float64)
+	value3, ok3 := data["key3"].(float64)
+
+	if !ok1 || !ok2 || !ok3 {
+		fmt.Println("Invalid JSON data format")
+	}
+
+	fmt.Printf("Value1: %f, Value2: %f, Value3: %f\n", value1, value2, value3)
 
 	file, err := os.OpenFile("cur.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
@@ -124,7 +139,7 @@ func writeToFile(body string) error {
 	defer file.Close()
 
 	// Write data to the file
-	if _, err := file.WriteString(body + "\n"); err != nil {
+	if _, err := file.WriteString(fmt.Sprintf("%f %f %f\n", value1, value2, value3)); err != nil {
 		fmt.Println("Error writing to file ", err)
 		return err
 	}
@@ -147,7 +162,7 @@ func main() {
 		// Выводим тело запроса в консоль
 		fmt.Println("Received request body:", body)
 
-		err := writeToFile(string(body))
+		err := writeToFile(body)
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).SendString("Error writing to file")
 		}
