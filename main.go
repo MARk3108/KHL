@@ -41,7 +41,7 @@ func readFromFile() ([]Scanner, error) {
 		fmt.Println("Error reading file:", err)
 		return nil, err
 	}
-
+	fmt.Println("Data from file:", content)
 	data := string(content)
 	lines := strings.Split(data, "\n")
 	var scanners []Scanner
