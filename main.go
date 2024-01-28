@@ -164,6 +164,7 @@ func writeToFile(body []byte) error {
 	if err != nil {
 		fmt.Println("Error parsing JSON data: ", err)
 	}
+	fmt.Println(data)
 	value1, ok1 := data["key1"].(float64)
 	value2, ok2 := data["key2"].(float64)
 	value3, ok3 := data["key3"].(float64)
