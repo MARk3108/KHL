@@ -168,13 +168,13 @@ func writeToFile(body []byte) error {
 	value1, ok1 := data["key1"].(float64)
 	value2, ok2 := data["key2"].(float64)
 	value3, ok3 := data["key3"].(float64)
-	value4, ok4 := data["key4"].(int)
+	value4, ok4 := data["key4"].(float64)
 
 	if !ok1 || !ok2 || !ok3 || !ok4 {
 		fmt.Println("Invalid JSON data format")
 	}
 
-	fmt.Printf("Value1: %f, Value2: %f, Value3: %f, Value4: %d\n", value1, value2, value3, value4)
+	fmt.Printf("Value1: %f, Value2: %f, Value3: %f, Value4: %f\n", value1, value2, value3, value4)
 
 	file, err := os.OpenFile("cur.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
@@ -182,9 +182,9 @@ func writeToFile(body []byte) error {
 		return err
 	}
 	defer file.Close()
-
+	val := int(value4)
 	// Write data to the file
-	if _, err := file.WriteString(fmt.Sprintf("%f %f %f %d\n", value1, value2, value3, value4)); err != nil {
+	if _, err := file.WriteString(fmt.Sprintf("%f %f %f %d\n", value1, value2, value3, val)); err != nil {
 		fmt.Println("Error writing to file ", err)
 		return err
 	}
