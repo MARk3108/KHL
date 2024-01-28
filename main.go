@@ -20,6 +20,7 @@ type Scanner struct {
 	Dist float64
 	X    float64
 	Y    float64
+	id   int
 }
 
 func getPort() string {
@@ -52,13 +53,13 @@ func readFromFile() ([]Scanner, error) {
 			continue
 		}
 		var scanner Scanner
-		_, err := fmt.Sscanf(line, "%f %f %f", &scanner.Dist, &scanner.X, &scanner.Y)
+		_, err := fmt.Sscanf(line, "%f %f %f %d", &scanner.Dist, &scanner.X, &scanner.Y, &scanner.id)
 		if err != nil {
 			fmt.Println("Error parsing line:", err)
 			return nil, err
 		}
 
-		key := fmt.Sprintf("%f,%f", scanner.X, scanner.Y)
+		key := fmt.Sprintf("%f,%f,%d", scanner.X, scanner.Y, scanner.id)
 		scannerMap[key] = scanner
 	}
 
@@ -67,49 +68,91 @@ func readFromFile() ([]Scanner, error) {
 	}
 
 	sort.Slice(scanners, func(i, j int) bool {
-		return scanners[i].Dist > scanners[j].Dist
+		if scanners[i].id == scanners[j].id {
+			return scanners[i].Dist > scanners[j].Dist
+		}
+		return scanners[i].id < scanners[j].id
 	})
 
 	var calculation []Scanner
+	var indexes []int
 	var scanStamp Scanner
+	compared := 0
+	added := false
+	guessedId := 1
+	var toCalculate []Scanner
+	if len(scanners) > 0 {
+		for _, scanner := range scanners {
+			if scanner.id == guessedId {
+				compared += 1
+				toCalculate = append(toCalculate, scanner)
+				if compared >= 3 {
+					for i := 0; i < 3; i++ {
+						dist := toCalculate[i].Dist
+						dist = math.Pow(10, ((-84 - dist) / (10 * 2)))
+						scanStamp.Dist = dist
+						scanStamp.X = toCalculate[i].X
+						scanStamp.Y = toCalculate[i].Y
+						scanStamp.id = guessedId
+						calculation = append(calculation, scanStamp)
+					}
+					x_podstav := (math.Pow(calculation[1].Dist, 2) - math.Pow(calculation[1].X, 2) -
+						math.Pow(calculation[0].Dist, 2) + math.Pow(calculation[0].X, 2) + math.Pow(calculation[0].Y, 2) -
+						math.Pow(calculation[1].Y, 2)) / (2 * (calculation[0].X - calculation[1].X))
+					koef := (calculation[1].Y - calculation[0].Y) / (calculation[0].X - calculation[1].X)
 
-	if len(scanners) >= 3 {
-		for i := 0; i < 3; i++ {
-			dist := scanners[i].Dist
-			dist = math.Pow(10, ((-84 - dist) / (10 * 2)))
-			scanStamp.Dist = dist
-			scanStamp.X = scanners[i].X
-			scanStamp.Y = scanners[i].Y
-			calculation = append(calculation, scanStamp)
+					y := (math.Pow(calculation[2].Dist, 2) - math.Pow(calculation[2].X, 2) +
+						(2 * calculation[2].X * x_podstav) - math.Pow(calculation[0].Dist, 2) +
+						math.Pow(calculation[0].X, 2) - (2 * calculation[0].X * x_podstav) +
+						math.Pow(calculation[0].Y, 2) - math.Pow(calculation[2].Y, 2)) /
+						(2*calculation[0].X*koef + 2*calculation[0].Y -
+							2*calculation[2].X*koef - 2*calculation[2].Y)
+					x := x_podstav + koef*y
+					fmt.Println("Coordinates: ", x, ";", y, "for id: ", guessedId)
+					added = true
+					indexes = append(indexes, guessedId)
+					calculation = calculation[:0]
+					toCalculate = toCalculate[:0]
+					compared = 0
+				}
+			} else {
+				compared = 1
+				toCalculate = toCalculate[:0]
+				toCalculate = append(toCalculate, scanner)
+				guessedId = scanner.id
+			}
 		}
-		x_podstav := (math.Pow(calculation[1].Dist, 2) - math.Pow(calculation[1].X, 2) -
-			math.Pow(calculation[0].Dist, 2) + math.Pow(calculation[0].X, 2) + math.Pow(calculation[0].Y, 2) -
-			math.Pow(calculation[1].Y, 2)) / (2 * (calculation[0].X - calculation[1].X))
-		koef := (calculation[1].Y - calculation[0].Y) / (calculation[0].X - calculation[1].X)
-
-		y := (math.Pow(calculation[2].Dist, 2) - math.Pow(calculation[2].X, 2) +
-			(2 * calculation[2].X * x_podstav) - math.Pow(calculation[0].Dist, 2) +
-			math.Pow(calculation[0].X, 2) - (2 * calculation[0].X * x_podstav) +
-			math.Pow(calculation[0].Y, 2) - math.Pow(calculation[2].Y, 2)) /
-			(2*calculation[0].X*koef + 2*calculation[0].Y -
-				2*calculation[2].X*koef - 2*calculation[2].Y)
-		x := x_podstav + koef*y
-		fmt.Println("Coordinates: ", x, ";", y)
-
+	}
+	if added {
 		file, err := os.OpenFile("cur.txt", os.O_WRONLY|os.O_TRUNC, 0666)
 		if err != nil {
 			fmt.Println("Error opening file:", err)
 		}
-		defer file.Close()
-
-		// Обрезать файл до нулевой длины (удалить все данные)
 		err = file.Truncate(0)
 		if err != nil {
 			fmt.Println("Error truncating file:", err)
 		}
 		fmt.Println("File content has been erased.")
+		file.Close()
+		file, err = os.OpenFile("cur.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			fmt.Println("Error opening file:", err)
+		}
+		for _, fetch := range scanners {
+			check := true
+			for _, ids := range indexes {
+				if fetch.id == ids {
+					check = false
+				}
+			}
+			if check {
+				if _, err := file.WriteString(fmt.Sprintf("%f %f %f %d\n", fetch.Dist, fetch.X, fetch.Y, fetch.id)); err != nil {
+					fmt.Println("Error writing to file ", err)
+				}
+			}
+		}
+		file.Close()
 	}
-
 	return scanners, nil
 }
 
@@ -124,12 +167,13 @@ func writeToFile(body []byte) error {
 	value1, ok1 := data["key1"].(float64)
 	value2, ok2 := data["key2"].(float64)
 	value3, ok3 := data["key3"].(float64)
+	value4, ok4 := data["key4"].(int)
 
-	if !ok1 || !ok2 || !ok3 {
+	if !ok1 || !ok2 || !ok3 || !ok4 {
 		fmt.Println("Invalid JSON data format")
 	}
 
-	fmt.Printf("Value1: %f, Value2: %f, Value3: %f\n", value1, value2, value3)
+	fmt.Printf("Value1: %f, Value2: %f, Value3: %f, Value4: %d\n", value1, value2, value3, value4)
 
 	file, err := os.OpenFile("cur.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
@@ -139,7 +183,7 @@ func writeToFile(body []byte) error {
 	defer file.Close()
 
 	// Write data to the file
-	if _, err := file.WriteString(fmt.Sprintf("%f %f %f\n", value1, value2, value3)); err != nil {
+	if _, err := file.WriteString(fmt.Sprintf("%f %f %f %d\n", value1, value2, value3, value4)); err != nil {
 		fmt.Println("Error writing to file ", err)
 		return err
 	}
