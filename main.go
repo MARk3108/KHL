@@ -1,16 +1,19 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"math"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/go-redis/redis/v8"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -109,6 +112,31 @@ func readFromFile() ([]Scanner, error) {
 							2*calculation[2].X*koef - 2*calculation[2].Y)
 					x := x_podstav + koef*y
 					fmt.Println("Coordinates: ", x, ";", y, "for id: ", guessedId)
+					options := &redis.Options{
+						Addr:     "91.108.241.205:6379", // Change this to your Redis server address
+						Password: "",                    // No password by default
+						DB:       0,                     // Use default DB
+					}
+					client := redis.NewClient(options)
+
+					currentTime := time.Now().Unix()
+					playerID := guessedId
+					playerX := x
+					playerY := y
+					redisKey := strconv.FormatInt(currentTime, 10)
+					playerDataRedis := map[string]interface{}{
+						"id":        strconv.Itoa(playerID),
+						"x":         fmt.Sprintf("%.15f", playerX),
+						"y":         fmt.Sprintf("%.15f", playerY),
+						"timestamp": strconv.FormatInt(currentTime, 10),
+					}
+					err := client.HMSet(context.Background(), redisKey, playerDataRedis).Err()
+					if err != nil {
+						fmt.Println("Error setting hash field-value pairs:", err)
+					}
+					fmt.Printf("Successfully set hash field-value pairs in Redis under key '%s'\n", redisKey)
+					client.Close()
+
 					added = true
 					indexes = append(indexes, guessedId)
 					calculation = calculation[:0]
