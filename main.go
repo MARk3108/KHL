@@ -100,18 +100,35 @@ func readFromFile() ([]Scanner, error) {
 						scanStamp.id = guessedId
 						calculation = append(calculation, scanStamp)
 					}
-					x_podstav := (math.Pow(calculation[1].Dist, 2) - math.Pow(calculation[1].X, 2) -
-						math.Pow(calculation[0].Dist, 2) + math.Pow(calculation[0].X, 2) + math.Pow(calculation[0].Y, 2) -
-						math.Pow(calculation[1].Y, 2)) / (2 * (calculation[0].X - calculation[1].X))
-					koef := (calculation[1].Y - calculation[0].Y) / (calculation[0].X - calculation[1].X)
+					var x float64
+					var y float64
+					if calculation[0].X == calculation[1].X {
+						x_podstav := (math.Pow(calculation[1].Dist, 2) - math.Pow(calculation[1].Y, 2) -
+							math.Pow(calculation[0].Dist, 2) + math.Pow(calculation[0].Y, 2) + math.Pow(calculation[0].X, 2) -
+							math.Pow(calculation[1].X, 2)) / (2 * (calculation[0].Y - calculation[1].Y))
+						koef := (calculation[1].X - calculation[0].X) / (calculation[0].Y - calculation[1].Y)
 
-					y := (math.Pow(calculation[2].Dist, 2) - math.Pow(calculation[2].X, 2) +
-						(2 * calculation[2].X * x_podstav) - math.Pow(calculation[0].Dist, 2) +
-						math.Pow(calculation[0].X, 2) - (2 * calculation[0].X * x_podstav) +
-						math.Pow(calculation[0].Y, 2) - math.Pow(calculation[2].Y, 2)) /
-						(2*calculation[0].X*koef + 2*calculation[0].Y -
-							2*calculation[2].X*koef - 2*calculation[2].Y)
-					x := x_podstav + koef*y
+						x = (math.Pow(calculation[2].Dist, 2) - math.Pow(calculation[2].Y, 2) +
+							(2 * calculation[2].Y * x_podstav) - math.Pow(calculation[0].Dist, 2) +
+							math.Pow(calculation[0].Y, 2) - (2 * calculation[0].Y * x_podstav) +
+							math.Pow(calculation[0].X, 2) - math.Pow(calculation[2].X, 2)) /
+							(2*calculation[0].Y*koef + 2*calculation[0].X -
+								2*calculation[2].Y*koef - 2*calculation[2].X)
+						y = x_podstav + koef*x
+					} else {
+						x_podstav := (math.Pow(calculation[1].Dist, 2) - math.Pow(calculation[1].X, 2) -
+							math.Pow(calculation[0].Dist, 2) + math.Pow(calculation[0].X, 2) + math.Pow(calculation[0].Y, 2) -
+							math.Pow(calculation[1].Y, 2)) / (2 * (calculation[0].X - calculation[1].X))
+						koef := (calculation[1].Y - calculation[0].Y) / (calculation[0].X - calculation[1].X)
+
+						y = (math.Pow(calculation[2].Dist, 2) - math.Pow(calculation[2].X, 2) +
+							(2 * calculation[2].X * x_podstav) - math.Pow(calculation[0].Dist, 2) +
+							math.Pow(calculation[0].X, 2) - (2 * calculation[0].X * x_podstav) +
+							math.Pow(calculation[0].Y, 2) - math.Pow(calculation[2].Y, 2)) /
+							(2*calculation[0].X*koef + 2*calculation[0].Y -
+								2*calculation[2].X*koef - 2*calculation[2].Y)
+						x = x_podstav + koef*y
+					}
 					fmt.Println("Coordinates: ", x, ";", y, "for id: ", guessedId)
 					options := &redis.Options{
 						Addr:     "91.108.241.205:6379", // Change this to your Redis server address
