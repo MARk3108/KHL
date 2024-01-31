@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -92,7 +93,7 @@ func readFromFile() ([]Scanner, error) {
 				if compared >= 3 {
 					for i := 0; i < 3; i++ {
 						dist := toCalculate[i].Dist
-						dist = math.Pow(10, ((-84 - dist) / (10 * 2)))
+						dist = math.Pow(10, ((-55 - dist) / (10 * 2)))
 						scanStamp.Dist = dist
 						scanStamp.X = toCalculate[i].X
 						scanStamp.Y = toCalculate[i].Y
@@ -120,21 +121,51 @@ func readFromFile() ([]Scanner, error) {
 					client := redis.NewClient(options)
 
 					currentTime := time.Now().Unix()
+					file, err := os.OpenFile("indexes.txt", os.O_RDWR, 0644)
+					if err != nil {
+						fmt.Println("Ошибка при открытии файла:", err)
+					}
+					caret := bufio.NewScanner(file)
+					var number int
+					if caret.Scan() {
+						// Преобразуем строку в число
+						currentValue, err := strconv.Atoi(caret.Text())
+						if err != nil {
+							fmt.Println("Ошибка при преобразовании строки в число:", err)
+						}
+						number = currentValue
+						newValue := currentValue + 1
+
+						// Позиционируемся в начало файла для записи нового значения
+						_, err = file.Seek(0, 0)
+						if err != nil {
+							fmt.Println("Ошибка при позиционировании в начало файла:", err)
+						}
+
+						// Записываем новое значение в файл
+						_, err = file.WriteString(strconv.Itoa(newValue))
+						if err != nil {
+							fmt.Println("Ошибка при записи в файл:", err)
+						}
+					} else {
+						fmt.Println("Файл пустой.")
+					}
+
 					playerID := guessedId
 					playerX := x
 					playerY := y
-					redisKey := strconv.FormatInt(currentTime, 10)
+					redisKey := strconv.Itoa(number)
 					playerDataRedis := map[string]interface{}{
 						"id":        strconv.Itoa(playerID),
 						"x":         fmt.Sprintf("%.15f", playerX),
 						"y":         fmt.Sprintf("%.15f", playerY),
 						"timestamp": strconv.FormatInt(currentTime, 10),
 					}
-					err := client.HMSet(context.Background(), redisKey, playerDataRedis).Err()
+					err = client.HMSet(context.Background(), redisKey, playerDataRedis).Err()
 					if err != nil {
 						fmt.Println("Error setting hash field-value pairs:", err)
 					}
-					fmt.Printf("Successfully set hash field-value pairs in Redis under key '%s'\n", redisKey)
+					fmt.Printf("Successfully set hash field-value pairs in Redis under key '%s' with values %f %f %d\n", redisKey, playerX, playerY, playerID)
 					client.Close()
 
 					added = true
