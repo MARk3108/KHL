@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -137,41 +136,17 @@ func readFromFile() ([]Scanner, error) {
 					}
 					client := redis.NewClient(options)
 
-					currentTime := time.Now().Unix()
-					file, err := os.OpenFile("indexes.txt", os.O_RDWR, 0644)
+					currentTime := time.Now().UnixNano() / int64(time.Millisecond)
+					size, err := client.DBSize(context.Background()).Result()
 					if err != nil {
-						fmt.Println("Ошибка при открытии файла:", err)
+						fmt.Println("Error getting database size:", err)
 					}
-					caret := bufio.NewScanner(file)
-					var number int
-					if caret.Scan() {
-						// Преобразуем строку в число
-						currentValue, err := strconv.Atoi(caret.Text())
-						if err != nil {
-							fmt.Println("Ошибка при преобразовании строки в число:", err)
-						}
-						number = currentValue
-						newValue := currentValue + 1
-
-						// Позиционируемся в начало файла для записи нового значения
-						_, err = file.Seek(0, 0)
-						if err != nil {
-							fmt.Println("Ошибка при позиционировании в начало файла:", err)
-						}
-
-						// Записываем новое значение в файл
-						_, err = file.WriteString(strconv.Itoa(newValue))
-						if err != nil {
-							fmt.Println("Ошибка при записи в файл:", err)
-						}
-					} else {
-						fmt.Println("Файл пустой.")
-					}
+					size += 1
 
 					playerID := guessedId
 					playerX := x
 					playerY := y
-					redisKey := strconv.Itoa(number)
+					redisKey := strconv.FormatInt(size, 10)
 					playerDataRedis := map[string]interface{}{
 						"id":        strconv.Itoa(playerID),
 						"x":         fmt.Sprintf("%.15f", playerX),
