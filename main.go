@@ -92,7 +92,7 @@ func readFromFile() ([]Scanner, error) {
 				if compared >= 3 {
 					for i := 0; i < 3; i++ {
 						dist := toCalculate[i].Dist
-						dist = math.Pow(10, ((-55 - dist) / (10 * 2)))
+						dist = math.Pow(10, ((-70 - dist) / (10 * 2)))
 						scanStamp.Dist = dist
 						scanStamp.X = toCalculate[i].X
 						scanStamp.Y = toCalculate[i].Y
