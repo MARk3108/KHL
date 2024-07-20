@@ -130,7 +130,7 @@ func readFromFile() ([]Scanner, error) {
 					}
 					fmt.Println("Coordinates: ", x, ";", y, "for id: ", guessedId)
 					options := &redis.Options{
-						Addr:     "91.108.240.55:6379", // Change this to your Redis server address
+						Addr:     "77.221.156.184:6379", // Change this to your Redis server address
 						Password: "",                    // No password by default
 						DB:       0,                     // Use default DB
 					}
